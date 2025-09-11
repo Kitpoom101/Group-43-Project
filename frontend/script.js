@@ -1,5 +1,4 @@
 let notes = [];
-let displayedNotes = [];
 let current = null;
 
 const listEl = document.getElementById('notesList');
@@ -11,217 +10,279 @@ const saveBtn = document.getElementById('saveBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const newNoteBtn = document.getElementById('newNoteBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const summarizeBtn = document.getElementById('summarizeBtn');
+const generateTitleBtn = document.getElementById('generateTitleBtn');
 const searchBar = document.getElementById('searchBar');
 
-// Custom message and confirm elements
-const messageBox = document.getElementById('messageBox');
-const messageText = document.getElementById('messageText');
-const messageOkBtn = document.getElementById('messageOkBtn');
-const confirmBox = document.getElementById('confirmBox');
-const confirmText = document.getElementById('confirmText');
-const confirmYesBtn = document.getElementById('confirmYesBtn');
-const confirmNoBtn = document.getElementById('confirmNoBtn');
+const modalBox = document.getElementById('messageModal');
+const modalText = document.getElementById('messageText');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+const modalCancelBtn = document.getElementById('modalCancelBtn');
 
-// Helper to get ID
+// Helper to get backend ID
 const getId = n => n?._id;
 
-// Show editor when the button is clicked
-newNoteBtn.onclick = () => openEditor();
-
-// Close the editor when cancel is clicked
-cancelBtn.onclick = () => closeEditor();
-
-// Close editor when clicking outside the content box
-editor.onclick = (e) => {
-  if (e.target === editor) {
-    closeEditor();
-  }
-};
-
-// Custom message box functions
-function showMessage(message) {
-  messageText.textContent = message;
-  messageBox.classList.add('show');
+// Custom alert function
+function customAlert(message) {
+    return new Promise(resolve => {
+        modalText.textContent = message;
+        modalConfirmBtn.style.display = 'inline-block';
+        modalCancelBtn.style.display = 'none';
+        modalConfirmBtn.onclick = () => {
+            modalBox.classList.remove('show');
+            resolve(true);
+        };
+        modalBox.classList.add('show');
+    });
 }
 
-messageOkBtn.onclick = () => {
-  messageBox.classList.remove('show');
-};
-
-// Custom confirm box function
-function showConfirm(message) {
-  return new Promise(resolve => {
-    confirmText.textContent = message;
-    confirmBox.classList.add('show');
-    confirmYesBtn.onclick = () => {
-      confirmBox.classList.remove('show');
-      resolve(true);
-    };
-    confirmNoBtn.onclick = () => {
-      confirmBox.classList.remove('show');
-      resolve(false);
-    };
-  });
+// Custom confirm function
+function customConfirm(message) {
+    return new Promise(resolve => {
+        modalText.textContent = message;
+        modalConfirmBtn.style.display = 'inline-block';
+        modalCancelBtn.style.display = 'inline-block';
+        modalConfirmBtn.onclick = () => {
+            modalBox.classList.remove('show');
+            resolve(true);
+        };
+        modalCancelBtn.onclick = () => {
+            modalBox.classList.remove('show');
+            resolve(false);
+        };
+        modalBox.classList.add('show');
+    });
 }
 
-// Load all notes from the backend
+// Load all notes
 async function loadNotes() {
   try {
     const res = await fetch('/api/notes');
-    if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+    notes = Array.isArray(await res.json()) ? await res.json() : [];
+
+    // Add example note if notes array is empty
+    if (notes.length === 0) {
+        notes.push({
+            title: "Delicious Tacos",
+            content: "Tacos are a popular Mexican dish. They are made with a small hand-sized corn or wheat tortilla topped with a filling. The filling can be anything from meat, fish, beans, vegetables, and cheese. They are often garnished with various condiments, such as salsa or chili pepper, avocado or guacamole, cilantro, tomatoes, and lettuce.",
+            tags: ["food"],
+            summary: "Tacos are a versatile Mexican dish consisting of a tortilla with various fillings like meat, fish, or vegetables, topped with condiments such as salsa, guacamole, and cilantro.",
+            _id: "example-id-1"
+        });
     }
-    const data = await res.json();
-    notes = Array.isArray(data) ? data : [];
 
+    render();
   } catch (err) {
-    console.error(err);
-    showMessage('Failed to load notes from the backend. Displaying a local example note.');
+    console.error("Failed to load notes from backend, using example note.", err);
+    // Add example note if backend fails
+    if (notes.length === 0) {
+        notes.push({
+            title: "Delicious Tacos",
+            content: "Tacos are a popular Mexican dish. They are made with a small hand-sized corn or wheat tortilla topped with a filling. The filling can be anything from meat, fish, beans, vegetables, and cheese. They are often garnished with various condiments, such as salsa or chili pepper, avocado or guacamole, cilantro, tomatoes, and lettuce.",
+            tags: ["food"],
+            summary: "Tacos are a versatile Mexican dish consisting of a tortilla with various fillings like meat, fish, or vegetables, topped with condiments such as salsa, guacamole, and cilantro.",
+            _id: "example-id-1"
+        });
+    }
+    render();
   }
-
-  // Add a default example note if the notes list is empty after the fetch attempt
-  if (notes.length === 0) {
-    notes.push({
-      _id: 'example-note-1',
-      title: 'A Local Example Note',
-      body: 'This note is a local example and is not saved to the backend. It shows you what the app looks like with content, even if the server is offline.',
-      tags: ['local', 'example'],
-    });
-  }
-
-  displayedNotes = notes;
-  render();
 }
 
 // Render note cards
-function render() {
+function render(filteredNotes = notes) {
   listEl.innerHTML = '';
-  if (displayedNotes.length === 0) {
-      const emptyMsg = document.createElement('p');
-      emptyMsg.textContent = 'No notes found. Try a different search!';
-      emptyMsg.style.textAlign = 'center';
-      emptyMsg.style.color = '#777';
-      listEl.appendChild(emptyMsg);
-  } else {
-    displayedNotes.forEach(n => {
-      const div = document.createElement('div');
-      div.className = 'note-item';
-      div.onclick = () => openEditor(n);
+  filteredNotes.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'note-item';
+    div.onclick = () => openEditor(n);
 
-      const title = document.createElement('div');
-      title.className = 'note-title';
-      title.textContent = n.title || 'Untitled';
+    const title = document.createElement('div');
+    title.className = 'note-title';
+    title.textContent = n.title || 'Untitled';
 
-      const tagsWrap = document.createElement('div');
-      tagsWrap.className = 'note-tags';
-      (n.tags || []).forEach(t => {
-        const tagSpan = document.createElement('span');
-        tagSpan.className = 'note-tag';
-        tagSpan.textContent = t;
-        tagsWrap.appendChild(tagSpan);
-      });
-      
-      const body = document.createElement('div');
-      body.className = 'note-body';
-      body.textContent = n.body || '';
+    const body = document.createElement('div');
+    body.className = 'note-body';
+    body.textContent = n.summary || n.content;
 
-      div.appendChild(title);
-      div.appendChild(body);
-      div.appendChild(tagsWrap);
-      listEl.appendChild(div);
+    const tagsWrap = document.createElement('div');
+    tagsWrap.className = 'note-tags';
+    (n.tags || []).forEach(t => {
+      const tag = document.createElement('span');
+      tag.className = 'note-tag';
+      tag.textContent = t;
+      tagsWrap.appendChild(tag);
     });
-  }
+
+    div.appendChild(title);
+    div.appendChild(body);
+    div.appendChild(tagsWrap);
+
+    listEl.appendChild(div);
+  });
 }
 
-// Function to handle search
-function handleSearch(query) {
-    const lowerQuery = query.toLowerCase();
-    displayedNotes = notes.filter(note => {
-        const titleMatch = note.title?.toLowerCase().includes(lowerQuery);
-        const tagsMatch = note.tags?.some(tag => tag.toLowerCase().includes(lowerQuery));
-        return titleMatch || tagsMatch;
-    });
-    render();
-}
-
-// Add event listener for the search bar
-searchBar.addEventListener('input', (e) => handleSearch(e.target.value));
-
+// Open and populate editor
 function openEditor(note) {
   current = note;
-  titleEl.value = note?.title || '';
-  bodyEl.value = note?.body || '';
-  tagsEl.value = note?.tags?.join(', ') || '';
-  saveBtn.textContent = note ? 'Save' : 'Add';
-  deleteBtn.style.display = note ? 'inline-block' : 'none';
+  titleEl.value = note.title || '';
+  bodyEl.value = note.content || '';
+  tagsEl.value = (note.tags || []).join(', ');
+
+  // Show/hide delete and LLM buttons
+  deleteBtn.style.display = getId(note) ? 'inline-block' : 'none';
+  summarizeBtn.style.display = getId(note) ? 'inline-block' : 'none';
+  generateTitleBtn.style.display = getId(note) ? 'inline-block' : 'none';
+  
+  // Change save button text for update
+  saveBtn.textContent = getId(note) ? 'Save' : 'Add';
+
   editor.classList.add('show');
 }
 
+// Close editor
 function closeEditor() {
-  editor.classList.remove('show');
   current = null;
+  editor.classList.remove('show');
   titleEl.value = '';
   bodyEl.value = '';
   tagsEl.value = '';
 }
 
-// Save or create note via API
-saveBtn.onclick = async (e) => {
-  e.preventDefault();
+// Event Listeners
+// Save/Update note
+saveBtn.onclick = async e => {
+  e.preventDefault(); // prevent page reload
   const payload = {
     title: titleEl.value,
-    body: bodyEl.value,
+    content: bodyEl.value,
     tags: tagsEl.value.split(',').map(t => t.trim()).filter(Boolean)
   };
 
   try {
-    let res;
     if (current && getId(current)) {
-      // Update existing note
-      res = await fetch(`/api/notes/${getId(current)}`, {
+      // Update
+      const res = await fetch(`/api/notes/${getId(current)}`, {
         method: 'PUT',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
+      const updated = await res.json();
+      notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
     } else {
-      // Create a new note
-      res = await fetch('/api/notes', {
+      // Create
+      const res = await fetch('/api/notes', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
+      const created = await res.json();
+      notes.unshift(created);
     }
-    
-    if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    await loadNotes(); // Reload notes from the backend
     closeEditor();
-  } catch(err) {
-    console.error(err);
-    showMessage('Failed to save note. Please check the console for errors.');
+    render();
+  } catch(err) { 
+    console.error(err); 
+    customAlert('Failed to add note.'); 
   }
 };
 
-// Delete note via API
+// Delete note
 deleteBtn.onclick = async () => {
   if (!current || !getId(current)) return;
-  const confirmed = await showConfirm('Are you sure you want to delete this note?');
-  if (!confirmed) {
-    return;
-  }
+  if (!await customConfirm('Delete this note?')) return;
+
   try {
-    const res = await fetch(`/api/notes/${getId(current)}`, { method:'DELETE' });
-    if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    await loadNotes(); // Reload notes from the backend
+    await fetch(`/api/notes/${getId(current)}`, { method:'DELETE' });
+    notes = notes.filter(n => getId(n) !== getId(current));
     closeEditor();
-  } catch(err) {
-    console.error(err);
-    showMessage('Failed to delete note. Please check the console for errors.');
+    render();
+  } catch(err) { 
+    console.error(err); 
+    customAlert('Failed to delete note.');
   }
 };
 
-// Load initial notes on page load
-window.onload = loadNotes;
+// Cancel button
+cancelBtn.onclick = () => closeEditor();
+
+// Click outside of editor to close
+editor.onclick = e => {
+  if (e.target === editor) {
+    closeEditor();
+  }
+};
+
+// New note button
+newNoteBtn.onclick = () => openEditor({});
+
+// Search notes
+searchBar.oninput = () => {
+  const query = searchBar.value.toLowerCase().trim();
+  if (!query) {
+    render();
+    return;
+  }
+  const filtered = notes.filter(n => {
+    const titleMatch = (n.title || '').toLowerCase().includes(query);
+    const tagsMatch = (n.tags || []).some(t => t.toLowerCase().includes(query));
+    return titleMatch || tagsMatch;
+  });
+  render(filtered);
+};
+
+// LLM Functions
+summarizeBtn.onclick = async () => {
+    if (!current || !getId(current)) return;
+
+    // Show loading state
+    summarizeBtn.textContent = 'Summarizing...';
+    summarizeBtn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/notes/${getId(current)}/summarize`, {
+            method: 'POST',
+        });
+        const updated = await res.json();
+        // Update the note on the frontend
+        notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
+        bodyEl.value = updated.content; // Update body with original content
+        customAlert("Summary created! It will appear on your note card.");
+    } catch (err) {
+        console.error(err);
+        customAlert('Failed to summarize note.');
+    } finally {
+        // Reset loading state
+        summarizeBtn.textContent = 'Summarize';
+        summarizeBtn.disabled = false;
+        render(); // Rerender to show the summary
+    }
+};
+
+generateTitleBtn.onclick = async () => {
+    if (!current || !getId(current)) return;
+
+    // Show loading state
+    generateTitleBtn.textContent = 'Generating...';
+    generateTitleBtn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/notes/${getId(current)}/generate-title`, {
+            method: 'POST',
+        });
+        const updated = await res.json();
+        // Update the note on the frontend
+        notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
+        titleEl.value = updated.title; // Update editor title
+        customAlert("Title generated!");
+    } catch (err) {
+        console.error(err);
+        customAlert('Failed to generate title.');
+    } finally {
+        // Reset loading state
+        generateTitleBtn.textContent = 'Generate Title';
+        generateTitleBtn.disabled = false;
+        render(); // Rerender to show the new title
+    }
+};
+
+loadNotes();

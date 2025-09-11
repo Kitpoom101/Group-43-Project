@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Smart-Note by Group-43</title>
+  <title>Smart-Note</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="header-group">
-        <h1 class="header-title">Smart-Note</h1>
-        <p class="header-subtitle">by Group-43</p>
+      <h1 class="header-title">Smart-Note</h1>
+      <span class="header-subtitle">by Group-43</span>
     </div>
     <div class="header-actions">
-        <input type="text" id="searchBar" class="search-bar" placeholder="Search by title or tag...">
-        <button id="newNoteBtn" class="btn-add">Add Note</button>
+      <input type="text" id="searchBar" class="search-bar" placeholder="Search by name or tag" />
+      <button id="newNoteBtn" class="btn-add">Add Note</button>
     </div>
   </header>
 
@@ -29,24 +29,21 @@
       <div class="editor-actions">
         <button id="cancelBtn" class="btn">Cancel</button>
         <button id="deleteBtn" class="btn">Delete</button>
+        <button id="summarizeBtn" class="btn llm-btn">Summarize</button>
+        <button id="generateTitleBtn" class="btn llm-btn">Generate Title</button>
         <button id="saveBtn" class="btn primary">Add</button>
       </div>
     </div>
   </div>
 
-  <!-- Custom Alert/Confirm Modals -->
-  <div id="messageBox" class="modal-box">
+  <!-- Custom Message Modal -->
+  <div id="messageModal" class="modal-box">
     <div class="modal-content">
       <p id="messageText"></p>
-      <button id="messageOkBtn" class="btn primary">OK</button>
-    </div>
-  </div>
-
-  <div id="confirmBox" class="modal-box">
-    <div class="modal-content">
-      <p id="confirmText"></p>
-      <button id="confirmYesBtn" class="btn">Yes</button>
-      <button id="confirmNoBtn" class="btn primary">No</button>
+      <div id="modalButtons">
+        <button id="modalConfirmBtn" class="btn">OK</button>
+        <button id="modalCancelBtn" class="btn">Cancel</button>
+      </div>
     </div>
   </div>
 
