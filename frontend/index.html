@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart-Note by Group-43</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-group">
+        <h1 class="header-title">Smart-Note</h1>
+        <p class="header-subtitle">by Group-43</p>
+    </div>
+    <div class="header-actions">
+        <input type="text" id="searchBar" class="search-bar" placeholder="Search by title or tag...">
+        <button id="newNoteBtn" class="btn-add">Add Note</button>
+    </div>
+  </header>
+
+  <main id="notesList" class="notes-list"></main>
+
+  <!-- Note Editor Modal -->
+  <div id="editor" class="editor">
+    <div class="editor-content">
+      <input id="title" placeholder="Title" />
+      <textarea id="body" placeholder="Write something..."></textarea>
+      <input id="tags" placeholder="Tags (comma separated)" />
+      <div class="editor-actions">
+        <button id="cancelBtn" class="btn">Cancel</button>
+        <button id="deleteBtn" class="btn">Delete</button>
+        <button id="saveBtn" class="btn primary">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert/Confirm Modals -->
+  <div id="messageBox" class="modal-box">
+    <div class="modal-content">
+      <p id="messageText"></p>
+      <button id="messageOkBtn" class="btn primary">OK</button>
+    </div>
+  </div>
+
+  <div id="confirmBox" class="modal-box">
+    <div class="modal-content">
+      <p id="confirmText"></p>
+      <button id="confirmYesBtn" class="btn">Yes</button>
+      <button id="confirmNoBtn" class="btn primary">No</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
