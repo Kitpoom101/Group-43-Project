@@ -1,8 +1,7 @@
-import Note from "../models/itemModel.js"; // Import the Note model
-import fetch from "node-fetch"; // Make sure to install node-fetch: npm install node-fetch
+import Note from "../models/noteModel.js"; // Corrected to use noteModel
+import fetch from "node-fetch";
 
 // --- Helper Function for LLM API Call ---
-// This reusable function handles the logic for calling the Gemini API.
 const callLlmApi = async (prompt) => {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) {
@@ -28,11 +27,9 @@ const callLlmApi = async (prompt) => {
     }
 
     const data = await response.json();
-    // Safely access the generated text
     return data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
   } catch (error) {
     console.error("Error calling LLM API:", error);
-    // Re-throw the error to be caught by the main controller function
     throw error;
   }
 };
@@ -40,27 +37,44 @@ const callLlmApi = async (prompt) => {
 
 // --- Standard CRUD Functions ---
 
-// 1. Create a new note
+// 1. Create a new note (handles title, content, and tags)
 export const createNote = async (req, res) => {
   try {
-    // We only need the 'content' from the user to create a note.
-    const { content } = req.body;
-    if (!content) {
-      return res.status(400).json({ message: "Content is required." });
+    const { title, content, tags } = req.body;
+
+    // A note can be created with just a title or just content
+    if (!title && !content) {
+      return res.status(400).json({ message: "Either title or content is required." });
     }
 
-    const newNote = new Note({ content });
+    const newNote = new Note({ title, content, tags });
     await newNote.save();
-    res.status(201).json(newNote); // 201 means "Created"
+    res.status(201).json(newNote);
   } catch (error) {
     res.status(500).json({ message: "Error creating note", error: error.message });
+  }
+};
+
+// ** NEW FUNCTION ADDED HERE **
+// 1b. Create a new note with only a title (for the new route)
+export const createNoteWithTitleOnly = async (req, res) => {
+  try {
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: "A title is required." });
+    }
+    const newNote = new Note({ title });
+    await newNote.save();
+    res.status(201).json(newNote);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating note with title only", error: error.message });
   }
 };
 
 // 2. Get all notes
 export const getAllNotes = async (req, res) => {
   try {
-    const notes = await Note.find({}).sort({ createdAt: -1 }); // Show newest first
+    const notes = await Note.find({}).sort({ createdAt: -1 });
     res.status(200).json(notes);
   } catch (error) {
     res.status(500).json({ message: "Error fetching notes", error: error.message });
@@ -72,7 +86,7 @@ export const getNoteById = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {
-      return res.status(404).json({ message: "Note not found." }); // 404 Not Found
+      return res.status(404).json({ message: "Note not found." });
     }
     res.status(200).json(note);
   } catch (error) {
@@ -83,11 +97,11 @@ export const getNoteById = async (req, res) => {
 // 4. Update a note
 export const updateNote = async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, tags } = req.body; // Added tags to update
     const updatedNote = await Note.findByIdAndUpdate(
       req.params.id,
-      { title, content },
-      { new: true, runValidators: true } // Return the updated document
+      { title, content, tags },
+      { new: true, runValidators: true }
     );
 
     if (!updatedNote) {
@@ -119,8 +133,8 @@ export const deleteNote = async (req, res) => {
 export const summarizeNoteContent = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (!note) {
-      return res.status(404).json({ message: "Note not found." });
+    if (!note || !note.content) {
+      return res.status(404).json({ message: "Note not found or content is empty." });
     }
 
     const prompt = `Summarize the following text concisely: "${note.content}"`;
@@ -138,14 +152,13 @@ export const summarizeNoteContent = async (req, res) => {
 export const generateNoteTitle = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (!note) {
-      return res.status(404).json({ message: "Note not found." });
+    if (!note || !note.content) {
+      return res.status(404).json({ message: "Note not found or content is empty." });
     }
 
     const prompt = `Generate a short, relevant title (less than 5 words) for this text: "${note.content}"`;
     const title = await callLlmApi(prompt);
 
-    // Clean up the title from potential quotes or extra text
     note.title = title.replace(/"/g, "").trim();
     await note.save();
     res.status(200).json(note);
@@ -154,7 +167,7 @@ export const generateNoteTitle = async (req, res) => {
   }
 };
 
-// 8. Elaborate on a note's content
+// 8. Elaborate on a note's content (or title)
 export const elaborateNoteContent = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
@@ -162,7 +175,14 @@ export const elaborateNoteContent = async (req, res) => {
       return res.status(404).json({ message: "Note not found." });
     }
 
-    const prompt = `Elaborate on the following idea and expand it into a full, well-written paragraph: "${note.content}"`;
+    // ** LOGIC ADDED HERE **
+    // Use the title as the source if content is empty
+    const sourceText = note.content || note.title;
+    if (!sourceText) {
+        return res.status(400).json({ message: "Note has no title or content to elaborate on." });
+    }
+
+    const prompt = `Elaborate on the following idea and expand it into a full, well-written paragraph: "${sourceText}"`;
     const elaboration = await callLlmApi(prompt);
 
     note.elaboration = elaboration;
@@ -172,3 +192,4 @@ export const elaborateNoteContent = async (req, res) => {
     res.status(500).json({ message: "Error elaborating content", error: error.message });
   }
 };
+

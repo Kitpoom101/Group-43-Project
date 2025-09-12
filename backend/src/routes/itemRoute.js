@@ -1,14 +1,18 @@
 import express from "express";
-import * as noteController from "../controllers/itemController.js";
+import * as noteController from "../controllers/noteController.js";
 
 // Initialize the router
 const router = express.Router();
 
 // --- Standard CRUD Routes ---
 
-// @desc    Create a new note
+// @desc    Create a new note with content
 // @route   POST /api/notes
 router.post("/", noteController.createNote);
+
+// @desc    Create a new note with only a title
+// @route   POST /api/notes/title-only
+router.post("/title-only", noteController.createNoteWithTitleOnly); // <-- NEW ROUTE ADDED HERE
 
 // @desc    Get all notes
 // @route   GET /api/notes
@@ -18,7 +22,7 @@ router.get("/", noteController.getAllNotes);
 // @route   GET /api/notes/:id
 router.get("/:id", noteController.getNoteById);
 
-// @desc    Update an existing note (e.g., user edits content manually)
+// @desc    Update an existing note
 // @route   PUT /api/notes/:id
 router.put("/:id", noteController.updateNote);
 
