@@ -1,3 +1,9 @@
+// --- CONFIGURATION ---
+// The full URL to your running backend server
+const API_URL = "http://localhost:5000";
+
+
+// --- Existing Code (with updated fetch calls) ---
 let notes = [];
 let current = null;
 
@@ -12,6 +18,8 @@ const newNoteBtn = document.getElementById('newNoteBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const summarizeBtn = document.getElementById('summarizeBtn');
 const generateTitleBtn = document.getElementById('generateTitleBtn');
+// ADDED ELEMENT REFERENCE
+const elaborateBtn = document.getElementById('elaborateBtn');
 const searchBar = document.getElementById('searchBar');
 
 const modalBox = document.getElementById('messageModal');
@@ -19,10 +27,8 @@ const modalText = document.getElementById('messageText');
 const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 const modalCancelBtn = document.getElementById('modalCancelBtn');
 
-// Helper to get backend ID
 const getId = n => n?._id;
 
-// Custom alert function
 function customAlert(message) {
     return new Promise(resolve => {
         modalText.textContent = message;
@@ -36,7 +42,6 @@ function customAlert(message) {
     });
 }
 
-// Custom confirm function
 function customConfirm(message) {
     return new Promise(resolve => {
         modalText.textContent = message;
@@ -54,41 +59,19 @@ function customConfirm(message) {
     });
 }
 
-// Load all notes
 async function loadNotes() {
   try {
-    const res = await fetch('/api/notes');
-    notes = Array.isArray(await res.json()) ? await res.json() : [];
-
-    // Add example note if notes array is empty
-    if (notes.length === 0) {
-        notes.push({
-            title: "Delicious Tacos",
-            content: "Tacos are a popular Mexican dish. They are made with a small hand-sized corn or wheat tortilla topped with a filling. The filling can be anything from meat, fish, beans, vegetables, and cheese. They are often garnished with various condiments, such as salsa or chili pepper, avocado or guacamole, cilantro, tomatoes, and lettuce.",
-            tags: ["food"],
-            summary: "Tacos are a versatile Mexican dish consisting of a tortilla with various fillings like meat, fish, or vegetables, topped with condiments such as salsa, guacamole, and cilantro.",
-            _id: "example-id-1"
-        });
-    }
-
+    const res = await fetch(`${API_URL}/api/notes`);
+    const data = await res.json();
+    notes = Array.isArray(data) ? data : [];
     render();
   } catch (err) {
-    console.error("Failed to load notes from backend, using example note.", err);
-    // Add example note if backend fails
-    if (notes.length === 0) {
-        notes.push({
-            title: "Delicious Tacos",
-            content: "Tacos are a popular Mexican dish. They are made with a small hand-sized corn or wheat tortilla topped with a filling. The filling can be anything from meat, fish, beans, vegetables, and cheese. They are often garnished with various condiments, such as salsa or chili pepper, avocado or guacamole, cilantro, tomatoes, and lettuce.",
-            tags: ["food"],
-            summary: "Tacos are a versatile Mexican dish consisting of a tortilla with various fillings like meat, fish, or vegetables, topped with condiments such as salsa, guacamole, and cilantro.",
-            _id: "example-id-1"
-        });
-    }
+    console.error("Failed to load notes from backend.", err);
+    customAlert("Could not connect to the backend. Please make sure the server is running.");
     render();
   }
 }
 
-// Render note cards
 function render(filteredNotes = notes) {
   listEl.innerHTML = '';
   filteredNotes.forEach(n => {
@@ -102,7 +85,7 @@ function render(filteredNotes = notes) {
 
     const body = document.createElement('div');
     body.className = 'note-body';
-    body.textContent = n.summary || n.content;
+    body.textContent = n.summary || n.elaboration || n.content;
 
     const tagsWrap = document.createElement('div');
     tagsWrap.className = 'note-tags';
@@ -121,25 +104,23 @@ function render(filteredNotes = notes) {
   });
 }
 
-// Open and populate editor
 function openEditor(note) {
   current = note;
   titleEl.value = note.title || '';
   bodyEl.value = note.content || '';
   tagsEl.value = (note.tags || []).join(', ');
 
-  // Show/hide delete and LLM buttons
   deleteBtn.style.display = getId(note) ? 'inline-block' : 'none';
   summarizeBtn.style.display = getId(note) ? 'inline-block' : 'none';
   generateTitleBtn.style.display = getId(note) ? 'inline-block' : 'none';
+  // ADDED VISIBILITY TOGGLE
+  elaborateBtn.style.display = getId(note) ? 'inline-block' : 'none';
   
-  // Change save button text for update
   saveBtn.textContent = getId(note) ? 'Save' : 'Add';
 
   editor.classList.add('show');
 }
 
-// Close editor
 function closeEditor() {
   current = null;
   editor.classList.remove('show');
@@ -148,10 +129,8 @@ function closeEditor() {
   tagsEl.value = '';
 }
 
-// Event Listeners
-// Save/Update note
 saveBtn.onclick = async e => {
-  e.preventDefault(); // prevent page reload
+  e.preventDefault();
   const payload = {
     title: titleEl.value,
     content: bodyEl.value,
@@ -161,7 +140,7 @@ saveBtn.onclick = async e => {
   try {
     if (current && getId(current)) {
       // Update
-      const res = await fetch(`/api/notes/${getId(current)}`, {
+      const res = await fetch(`${API_URL}/api/notes/${getId(current)}`, {
         method: 'PUT',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
@@ -170,7 +149,7 @@ saveBtn.onclick = async e => {
       notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
     } else {
       // Create
-      const res = await fetch('/api/notes', {
+      const res = await fetch(`${API_URL}/api/notes`, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
@@ -182,17 +161,16 @@ saveBtn.onclick = async e => {
     render();
   } catch(err) { 
     console.error(err); 
-    customAlert('Failed to add note.'); 
+    customAlert('Failed to save note.'); 
   }
 };
 
-// Delete note
 deleteBtn.onclick = async () => {
   if (!current || !getId(current)) return;
   if (!await customConfirm('Delete this note?')) return;
 
   try {
-    await fetch(`/api/notes/${getId(current)}`, { method:'DELETE' });
+    await fetch(`${API_URL}/api/notes/${getId(current)}`, { method:'DELETE' });
     notes = notes.filter(n => getId(n) !== getId(current));
     closeEditor();
     render();
@@ -202,20 +180,16 @@ deleteBtn.onclick = async () => {
   }
 };
 
-// Cancel button
 cancelBtn.onclick = () => closeEditor();
 
-// Click outside of editor to close
 editor.onclick = e => {
   if (e.target === editor) {
     closeEditor();
   }
 };
 
-// New note button
 newNoteBtn.onclick = () => openEditor({});
 
-// Search notes
 searchBar.oninput = () => {
   const query = searchBar.value.toLowerCase().trim();
   if (!query) {
@@ -230,59 +204,75 @@ searchBar.oninput = () => {
   render(filtered);
 };
 
-// LLM Functions
 summarizeBtn.onclick = async () => {
     if (!current || !getId(current)) return;
-
-    // Show loading state
     summarizeBtn.textContent = 'Summarizing...';
     summarizeBtn.disabled = true;
-
     try {
-        const res = await fetch(`/api/notes/${getId(current)}/summarize`, {
+        const res = await fetch(`${API_URL}/api/notes/${getId(current)}/summarize`, {
             method: 'POST',
         });
         const updated = await res.json();
-        // Update the note on the frontend
         notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
-        bodyEl.value = updated.content; // Update body with original content
+        bodyEl.value = updated.content;
         customAlert("Summary created! It will appear on your note card.");
     } catch (err) {
         console.error(err);
         customAlert('Failed to summarize note.');
     } finally {
-        // Reset loading state
         summarizeBtn.textContent = 'Summarize';
         summarizeBtn.disabled = false;
-        render(); // Rerender to show the summary
+        render();
     }
 };
 
 generateTitleBtn.onclick = async () => {
     if (!current || !getId(current)) return;
-
-    // Show loading state
     generateTitleBtn.textContent = 'Generating...';
     generateTitleBtn.disabled = true;
-
     try {
-        const res = await fetch(`/api/notes/${getId(current)}/generate-title`, {
+        const res = await fetch(`${API_URL}/api/notes/${getId(current)}/generate-title`, {
             method: 'POST',
         });
         const updated = await res.json();
-        // Update the note on the frontend
         notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
-        titleEl.value = updated.title; // Update editor title
+        titleEl.value = updated.title;
         customAlert("Title generated!");
     } catch (err) {
         console.error(err);
         customAlert('Failed to generate title.');
     } finally {
-        // Reset loading state
         generateTitleBtn.textContent = 'Generate Title';
         generateTitleBtn.disabled = false;
-        render(); // Rerender to show the new title
+        render();
+    }
+};
+
+// --- ADDED ELABORATE FUNCTION ---
+elaborateBtn.onclick = async () => {
+    if (!current || !getId(current)) return;
+
+    elaborateBtn.textContent = 'Elaborating...';
+    elaborateBtn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/api/notes/${getId(current)}/elaborate`, {
+            method: 'POST',
+        });
+        const updated = await res.json();
+        notes = notes.map(n => getId(n) === getId(updated) ? updated : n);
+        // Update the editor with the new elaborated content
+        bodyEl.value = updated.elaboration;
+        customAlert("Content has been elaborated!");
+    } catch (err) {
+        console.error(err);
+        customAlert('Failed to elaborate content.');
+    } finally {
+        elaborateBtn.textContent = 'Elaborate';
+        elaborateBtn.disabled = false;
+        render();
     }
 };
 
 loadNotes();
+
