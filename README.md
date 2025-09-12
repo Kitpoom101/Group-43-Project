@@ -1,74 +1,158 @@
-"# Group-43-Project" 
-Smart Note-Taking App - Final Project
-This project is a full-stack web application that allows users to create, manage, and enhance their notes using AI-powered features.
+📝 Smart Note-Taking App
+A full-stack web application for creating, managing, and enhancing notes with the power of AI.
 
-Project Status & Checklist
-This checklist tracks the overall progress of the project.
+This project is a complete note-taking solution that allows users to perform standard CRUD (Create, Read, Update, Delete) operations. It integrates with a large language model (LLM) to provide intelligent features like content summarization, title generation, and text elaboration, transforming a simple notepad into a powerful writing assistant.
 
-Phase 1: Backend & Initial Setup (Complete ✔️)
-The entire backend architecture has been built and successfully pushed to the shared GitHub repository. The backend is ready for the frontend to connect to it.
+✨ Features
+Full CRUD Functionality: Create, read, update, and delete notes with ease.
 
-[x] 1. Project Setup
+AI-Powered Summarization: Instantly generate a concise summary of any long note with a single click.
 
-[x] Initialize Git and GitHub repository.
+AI Title Generation: Automatically create a relevant and short title for your note's content.
 
-[x] Create .gitignore file.
+AI Content Elaboration: Expand on a simple idea or title to generate a full, well-written paragraph.
 
-[x] Set up project folder structure (backend, frontend).
+Tagging System: Organize your notes with comma-separated tags.
 
-[x] Connect local repository to GitHub Desktop correctly.
+Live Search: Instantly filter notes by title or tags.
 
-[x] 2. Database Schema (Model)
+Responsive Design: A clean, intuitive, and responsive user interface that works on all devices.
 
-[x] Design and create the noteModel.js.
+🛠️ Tech Stack
+Backend
+Node.js: JavaScript runtime environment.
 
-[x] 3. Application Logic (Controller)
+Express.js: Web framework for building the API.
 
-[x] Design and create the noteController.js.
+MongoDB: NoSQL database for storing notes.
 
-[x] Implement CRUD and LLM functions.
+Mongoose: Object Data Modeling (ODM) library for MongoDB.
 
-[x] 4. API Endpoints (Routes)
+Google Gemini API: For all generative AI functionalities.
 
-[x] Design and create the noteRoute.js.
+Frontend
+HTML5
 
-[x] 5. Server Configuration
+CSS3
 
-[x] Create config/db.js, app.js, and server.js.
+Vanilla JavaScript (ES6+): For all client-side logic and DOM manipulation.
 
-[x] 6. Environment & Security
+🚀 Getting Started
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
-[x] Create .env file for secret keys.
+Prerequisites
+Node.js installed (which includes npm).
 
-[x] 7. Version Control
+MongoDB Atlas account and a connection string.
 
-[x] Make first push to main branch on GitHub. (Completed)
+A Google AI Studio API Key for the Gemini LLM.
 
-Phase 2: Frontend Development (Next Steps)
-Now that the backend is live on GitHub, you and your friend can start building the user interface.
+Installation & Setup
+Clone the repository:
 
-[ ] 1. Setup Frontend Framework
+git clone [https://github.com/your-username/your-repository-name.git](https://github.com/your-username/your-repository-name.git)
+cd your-repository-name
 
-[ ] Choose a framework: Decide as a team if you will use React, Vue, Svelte, or plain HTML/CSS/JS.
+Backend Setup:
 
-[ ] Initialize the project: Use the framework's command-line tool to create the project inside the frontend folder (e.g., npx create-react-app . if you are already inside the frontend folder).
+Navigate to the backend directory:
 
-[ ] 2. Build UI Components
+cd backend
 
-[ ] NoteList.js: A component to display all notes fetched from the backend.
+Install the required npm packages:
 
-[ ] NoteView.js: A component to show the full content of a single selected note.
+npm install
 
-[ ] NoteEditor.js: A form for creating a new note or editing an existing one.
+Create your environment file by copying the template:
 
-[ ] ActionButtons.js: A component containing the buttons for "Delete", "Summarize", "Generate Title", and "Elaborate".
+cp .env.template .env
 
-[ ] 3. Connect to Backend API
+Open the newly created .env file and fill in your DATABASE_URL and LLM_API_KEY.
 
-[ ] Create a service file (e.g., api.js) to hold all the fetch or axios calls to your backend API endpoints.
+Start the backend server:
 
-[ ] Connect the UI components to these service functions to display data and send updates.
+npm start
 
-[ ] 4. State Management
+The server will be running on http://localhost:5000.
 
-[ ] Decide how to manage the application's data. For simple apps, React's useState and useContext are often enough.
+Frontend Setup:
+
+No installation is needed for the frontend.
+
+The easiest way to run the frontend is by using a live server extension. For example, in VS Code, right-click the frontend/index.html file and select "Open with Live Server".
+
+The frontend will be accessible at http://localhost:5500 (or a similar port). The application is pre-configured to communicate with the backend running on port 5000.
+
+📜 API Endpoints
+The following are the API routes available on the backend:
+
+Method
+
+Endpoint
+
+Description
+
+POST
+
+/api/notes
+
+Create a new note with content.
+
+POST
+
+/api/notes/title-only
+
+Create a new note with only a title.
+
+GET
+
+/api/notes
+
+Get a list of all notes.
+
+GET
+
+/api/notes/:id
+
+Get a single note by its ID.
+
+PUT
+
+/api/notes/:id
+
+Update an existing note.
+
+DELETE
+
+/api/notes/:id
+
+Delete a note.
+
+POST
+
+/api/notes/:id/summarize
+
+Generate and save a summary for a note.
+
+POST
+
+/api/notes/:id/generate-title
+
+Generate and save a title for a note.
+
+POST
+
+/api/notes/:id/elaborate
+
+Generate and save elaborated content.
+
+👥 Authors
+This project was created by:
+Kaweekorn Satjayan  -  6833007921
+Kirakorn Vitayawatanakul  -  6833026821
+Kitpoom Theptawee  -  6833004021
+Natnicha Inthong  -  6833083521
+Paweekorn Dechatiwong Na Ayutthaya  -  6833161821
+Sirawit Kanchanakhirithamrong  -  6833266021
+
+Project for Group 43
