@@ -2,14 +2,16 @@ import "dotenv/config";
 import http from "http";
 
 import app from "./app.js";
-import connectDB from "./src/config/db.js";
+// --- CORRECTED IMPORT HERE ---
+// Use a named import to match the export style in db.js
+import { connectDB } from "./config/db.js";
 
 // Connect to the database
 connectDB();
 
 const server = http.createServer(app);
 
-// This is for gracefully handling server errors and shutting down.
+// Graceful error handling and shutdown
 process.on("uncaughtException", (err) => {
   console.log("UNCAUGHT EXCEPTION! 💥 Shutting down...");
   console.log(err.name, err.message);

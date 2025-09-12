@@ -1,4 +1,5 @@
-import Note from "../models/noteModel.js"; // Corrected to use noteModel
+// --- CORRECTED FILENAME HERE ---
+import Note from "../models/itemModel.js";
 import fetch from "node-fetch";
 
 // --- Helper Function for LLM API Call ---
@@ -37,16 +38,12 @@ const callLlmApi = async (prompt) => {
 
 // --- Standard CRUD Functions ---
 
-// 1. Create a new note (handles title, content, and tags)
 export const createNote = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
-
-    // A note can be created with just a title or just content
     if (!title && !content) {
-      return res.status(400).json({ message: "Either title or content is required." });
+        return res.status(400).json({ message: "Either title or content is required." });
     }
-
     const newNote = new Note({ title, content, tags });
     await newNote.save();
     res.status(201).json(newNote);
@@ -55,23 +52,20 @@ export const createNote = async (req, res) => {
   }
 };
 
-// ** NEW FUNCTION ADDED HERE **
-// 1b. Create a new note with only a title (for the new route)
 export const createNoteWithTitleOnly = async (req, res) => {
   try {
     const { title } = req.body;
     if (!title) {
       return res.status(400).json({ message: "A title is required." });
     }
-    const newNote = new Note({ title });
-    await newNote.save();
-    res.status(201).json(newNote);
+    const newNote = new Note({ title: title });
+    const savedNote = await newNote.save();
+    res.status(201).json(savedNote);
   } catch (error) {
-    res.status(500).json({ message: "Error creating note with title only", error: error.message });
+    res.status(500).json({ message: "Error creating note", error: error.message });
   }
 };
 
-// 2. Get all notes
 export const getAllNotes = async (req, res) => {
   try {
     const notes = await Note.find({}).sort({ createdAt: -1 });
@@ -81,7 +75,6 @@ export const getAllNotes = async (req, res) => {
   }
 };
 
-// 3. Get a single note by ID
 export const getNoteById = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
@@ -94,16 +87,14 @@ export const getNoteById = async (req, res) => {
   }
 };
 
-// 4. Update a note
 export const updateNote = async (req, res) => {
   try {
-    const { title, content, tags } = req.body; // Added tags to update
+    const { title, content, tags } = req.body;
     const updatedNote = await Note.findByIdAndUpdate(
       req.params.id,
       { title, content, tags },
       { new: true, runValidators: true }
     );
-
     if (!updatedNote) {
       return res.status(404).json({ message: "Note not found." });
     }
@@ -113,7 +104,6 @@ export const updateNote = async (req, res) => {
   }
 };
 
-// 5. Delete a note
 export const deleteNote = async (req, res) => {
   try {
     const deletedNote = await Note.findByIdAndDelete(req.params.id);
@@ -129,17 +119,14 @@ export const deleteNote = async (req, res) => {
 
 // --- LLM Integration Functions ---
 
-// 6. Summarize a note's content
 export const summarizeNoteContent = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note || !note.content) {
       return res.status(404).json({ message: "Note not found or content is empty." });
     }
-
     const prompt = `Summarize the following text concisely: "${note.content}"`;
     const summary = await callLlmApi(prompt);
-
     note.summary = summary;
     await note.save();
     res.status(200).json(note);
@@ -148,17 +135,14 @@ export const summarizeNoteContent = async (req, res) => {
   }
 };
 
-// 7. Generate a title for a note
 export const generateNoteTitle = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note || !note.content) {
       return res.status(404).json({ message: "Note not found or content is empty." });
     }
-
     const prompt = `Generate a short, relevant title (less than 5 words) for this text: "${note.content}"`;
     const title = await callLlmApi(prompt);
-
     note.title = title.replace(/"/g, "").trim();
     await note.save();
     res.status(200).json(note);
@@ -167,24 +151,18 @@ export const generateNoteTitle = async (req, res) => {
   }
 };
 
-// 8. Elaborate on a note's content (or title)
 export const elaborateNoteContent = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {
       return res.status(404).json({ message: "Note not found." });
     }
-
-    // ** LOGIC ADDED HERE **
-    // Use the title as the source if content is empty
     const sourceText = note.content || note.title;
     if (!sourceText) {
         return res.status(400).json({ message: "Note has no title or content to elaborate on." });
     }
-
     const prompt = `Elaborate on the following idea and expand it into a full, well-written paragraph: "${sourceText}"`;
     const elaboration = await callLlmApi(prompt);
-
     note.elaboration = elaboration;
     await note.save();
     res.status(200).json(note);
@@ -192,4 +170,3 @@ export const elaborateNoteContent = async (req, res) => {
     res.status(500).json({ message: "Error elaborating content", error: error.message });
   }
 };
-
